@@ -1,0 +1,139 @@
+{
+  "type": "join",
+  "userId": "user123",
+  "role": "manager"
+  // or "member"
+}
+{
+  "type": "leave",
+  "userId": "user123"
+}
+{
+  "type": "operation",
+  "operationType": "DRAW_RECTANGLE",
+  "userId": "user123",
+  "x": 10.0,
+  "y": 10.0,
+  "width": 100.0,
+  "height": 50.0,
+  "color": "red"
+}
+
+{
+  "type": "OPERATION",
+  "operationType": "DRAW_RECTANGLE",
+  "userId": "user123",
+  "x": 10.0,
+  "y": 10.0,
+  "width": 100.0,
+  "height": 50.0,
+  "color": "red"
+}
+{
+  "type": "OPERATION",
+  "operationType": "DRAW_CIRCLE",
+  "userId": "user123",
+  "centerX": 10.0,
+  "centerY": 10.0,
+  "radius": 50.0,
+  "color": "blue"
+}
+{
+  "type": "OPERATION",
+  "operationType": "DRAW_OVAL",
+  "userId": "user123",
+  "centerX": 10.0,
+  "centerY": 10.0,
+  "radiusX": 50.0,
+  "radiusY": 30.0,
+  "color": "green"
+}
+{
+  "type": "operation",
+  "operationType": "ERASE",
+  "userId": "user123",
+  "x": 10.0,
+  "y": 10.0
+}
+{
+  "type": "operation",
+  "operationType": "DRAW_LINE",
+  "userId": "user123",
+  "startX": 10.0,
+  "startY": 10.0,
+  "endX": 100.0,
+  "endY": 100.0,
+  "color": "yellow"
+}
+{
+  "type": "operation",
+  "operationType": "DRAW_TEXT",
+  "userId": "user123",
+  "startX": 10.0,
+  "startY": 10.0,
+  "text": "Hello, World!",
+  "color": "black"
+}
+{
+  "type": "kick",
+  "userId": "user123",
+  "targetUserId": "user456",
+  "reason": "You are not allowed to draw on this whiteboard."
+}
+{
+  "type": "approval",
+  "approved": true,
+  "userId": "user123"
+}
+{
+  "type": "chat",
+  "userId": "user123",
+  "message": "Hello, world!"
+}
+
+{
+  "type": "userList",
+  "userId": "123",
+  "userList": [
+    "user123",
+    "user456",
+    "user789"
+  ]
+}
+//open file
+{
+  "type": "snapshot",
+  "userId": "123",
+  "commands": [
+    "user123",
+    "user456",
+    "user789"
+  ],
+  "writeToBoard": true
+}
+{
+  "type": "fileOperation",
+  "operationType": "new",
+  "managerId": "manager123"
+}
+
+{
+  "type": "fileOperation",
+  "operationType": "save",
+  "userId": "member1"
+}{
+  "type": "fileOperation",
+  "operationType": "close",
+  "userId": "member1"
+}
+
+{
+  "type": "fileOperation",
+  "operationType": "open",
+  "commands": [
+    "user123",
+    "user456",
+    "user789"
+  ],
+  "userId": "member1"
+}
