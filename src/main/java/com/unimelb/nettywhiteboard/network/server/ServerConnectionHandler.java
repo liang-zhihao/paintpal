@@ -83,6 +83,11 @@ public class ServerConnectionHandler extends ChannelInboundHandlerAdapter {
             String userId = jsonObject.get("userId").getAsString();
             String approval = jsonObject.get("approved").getAsString();
             if (approval.equals("true")) {
+                if (waitingMembers.get(userId) != null && !waitingMembers.get(userId).channel().isOpen()) {
+                    logger.info("User {} is disconnected", userId);
+                    waitingMembers.remove(userId);
+                    return;
+                }
                 ChannelHandlerContext memberCtx = waitingMembers.get(userId);
 //                send approval message to member
                 logger.info("User {} is approved to join the whiteboard", userId);
@@ -93,7 +98,6 @@ public class ServerConnectionHandler extends ChannelInboundHandlerAdapter {
 //                remove member from waiting list
                 waitingMembers.remove(userId);
 
-//                TODO send message to all users and update user list
 //
 //                send user list to all users
                 whiteboardServer.broadcastUserList();
@@ -111,7 +115,7 @@ public class ServerConnectionHandler extends ChannelInboundHandlerAdapter {
                     }
                 });
             } else {
-//                TODO send message to member
+
                 ChannelHandlerContext memberCtx = waitingMembers.get(userId);
                 memberCtx.writeAndFlush(message);
                 logger.info("User {} is rejected to join the whiteboard", userId);
@@ -123,7 +127,6 @@ public class ServerConnectionHandler extends ChannelInboundHandlerAdapter {
             String targetId = jsonObject.get("targetUserId").getAsString();
             if (managers.containsKey(userId)) {
                 ChannelHandlerContext targetCtx = members.get(targetId);
-//                TODO send message to member
                 targetCtx.writeAndFlush(message);
                 whiteboardServer.removeUser(targetId);
                 logger.info("User {} is kicked out the whiteboard", targetId);
@@ -135,15 +138,13 @@ public class ServerConnectionHandler extends ChannelInboundHandlerAdapter {
             logger.info("User {} is leaving the whiteboard", userId);
             whiteboardServer.removeUser(userId);
         }
-//        TODO receive leave message
+
         // Process the received message here
         // Broadcast the message to all clients
 
 
         senderCtx.fireChannelRead(msg);
 
-
-// Then you can send bytes over the network
 
     }
 

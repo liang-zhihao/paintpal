@@ -50,7 +50,7 @@ public class ClientServer {
     private SimpleStringProperty approvalMessage = new SimpleStringProperty("");
     private SimpleStringProperty joinMessage = new SimpleStringProperty("");
 
-    private SimpleStringProperty clientStatus = new SimpleStringProperty(ConnectionStatus.CONNECTING.getStatus());
+    private SimpleStringProperty connectionStatus = new SimpleStringProperty(ConnectionStatus.CONNECTING.getStatus());
 
     private SimpleListProperty<String> userList = new SimpleListProperty<>(FXCollections.observableArrayList());
 
@@ -77,14 +77,18 @@ public class ClientServer {
                     ch.pipeline().addLast(new JsonObjectDecoder(), new StringEncoder(), new ClientConnectionHandler(ClientServer.this), new CanvasHandler(ClientServer.this), new ChatHandler(ClientServer.this), new ClientFileOperationHandler(ClientServer.this));
                 }
             });
-
             channel = bootstrap.connect(host, port).sync().channel();
         } catch (Exception e) {
-            e.printStackTrace();
+            this.connectionStatus.set(ConnectionStatus.DISCONNECTED.getStatus());
+            logger.error("Failed to connect to server", e);
+            System.exit(0);
         }
     }
 
     public ChannelFuture sendMessage(String message) {
+        if (this.connectionStatus.get().equals(ConnectionStatus.DISCONNECTED.getStatus())) {
+            return null;
+        }
         return channel.writeAndFlush(message + "\r\n");
     }
 
@@ -132,7 +136,6 @@ public class ClientServer {
         public synchronized void draw(String msg) {
 
             Platform.runLater(() -> {
-
                 Gson gson = new Gson();
                 JsonObject jsonObject = gson.fromJson(msg, JsonObject.class);
                 if (MessageUtils.isDrawLine(msg)) {
@@ -234,16 +237,16 @@ public class ClientServer {
         this.joinMessage.set(joinMessage);
     }
 
-    public String getClientStatus() {
-        return clientStatus.get();
+    public String getConnectionStatus() {
+        return connectionStatus.get();
     }
 
-    public SimpleStringProperty clientStatusProperty() {
-        return clientStatus;
+    public SimpleStringProperty connectionStatusProperty() {
+        return connectionStatus;
     }
 
-    public void setClientStatus(String clientStatus) {
-        this.clientStatus.set(clientStatus);
+    public void setConnectionStatus(String connectionStatus) {
+        this.connectionStatus.set(connectionStatus);
     }
 
     public ObservableList<String> getUserList() {
@@ -259,7 +262,7 @@ public class ClientServer {
     }
 
     public enum ConnectionStatus {
-        DISCONNECTED("Disconnected"), CONNECTING("Connecting"), WAITING_FOR_APPROVAL("Waiting for Approval"), APPROVED("Approved"), ACTIVE("Active"), KICKED_OUT("Kicked Out"), DISCONNECTING("Disconnecting"), CLOSED("Closed"),NOT_APPROVED("Not Approved");
+        DISCONNECTED("Disconnected"), CONNECTING("Connecting"), WAITING_FOR_APPROVAL("Waiting for Approval"), APPROVED("Approved"), ACTIVE("Active"), KICKED_OUT("Kicked Out"), DISCONNECTING("Disconnecting"), CLOSED("Closed"), NOT_APPROVED("Not Approved");
 
         private final String status;
 

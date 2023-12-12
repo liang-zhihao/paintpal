@@ -90,7 +90,7 @@ public class WhiteboardServer {
             }).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
 
             ChannelFuture f = b.bind(port).sync();
-            System.out.println("WhiteboardServer started on port " + port);
+            logger.info("WhiteboardServer started on port " + port);
             f.channel().closeFuture().sync();
         } finally {
             workerGroup.shutdownGracefully();
@@ -107,11 +107,9 @@ public class WhiteboardServer {
 
 
     public static void main(String[] args) throws Exception {
-        ArgumentParser parser = ArgumentParsers.newFor("server").build()
-                .defaultHelp(true);
+        ArgumentParser parser = ArgumentParsers.newFor("server").build().defaultHelp(true);
 
-        parser.addArgument("-p", "--serverPort").required(true).type(Integer.class)
-                .help("Server Port");
+        parser.addArgument("-p", "--serverPort").required(true).type(Integer.class).help("Server Port");
 
         Namespace ns = null;
         try {
@@ -149,11 +147,24 @@ public class WhiteboardServer {
 
     public void removeUser(String userId) {
 
-
+        for (String key : waitingMembers.keySet()) {
+            if (key.equals(userId)) {
+                ChannelHandlerContext context = waitingMembers.remove(key);
+                context.close();
+                logger.info(" Waiting members {} has been remove the whiteboard", userId);
+                break;
+            }
+        }
         for (String key : managers.keySet()) {
             if (key.equals(userId)) {
                 ChannelHandlerContext context = managers.remove(key);
                 context.close();
+                logger.info("Manager {} has been remove the whiteboard", userId);
+                if (managers.isEmpty()) {
+                    this.historyMessages.clear();
+                    this.historyDrawCommands.clear();
+                }
+
                 break;
             }
         }
@@ -161,6 +172,7 @@ public class WhiteboardServer {
             if (key.equals(userId)) {
                 ChannelHandlerContext context = members.remove(key);
                 this.broadcastMessage(MessageBuilder.buildChatMessage("System", userId + " has left the whiteboard"), null);
+                logger.info("Member {} has left the whiteboard", userId);
                 context.close();
                 break;
             }
@@ -171,15 +183,25 @@ public class WhiteboardServer {
 
     public void removeUser(ChannelHandlerContext context) {
         context.close();
+        for (String key : waitingMembers.keySet()) {
+            if (waitingMembers.get(key).equals(context)) {
+                waitingMembers.remove(key);
+                logger.info(" Waiting members {} has been remove the whiteboard", key);
+                break;
+            }
+        }
+
         for (String key : managers.keySet()) {
             if (managers.get(key).equals(context)) {
                 managers.remove(key);
+                logger.info("Manager {} has been remove the whiteboard", key);
                 break;
             }
         }
         for (String key : members.keySet()) {
             if (members.get(key).equals(context)) {
                 members.remove(key);
+                this.broadcastMessage(MessageBuilder.buildChatMessage("System", key + " has left the whiteboard"), null);
                 break;
             }
         }

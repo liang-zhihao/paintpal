@@ -51,7 +51,7 @@ public class ClientFileOperationHandler extends io.netty.channel.ChannelInboundH
 
 
         if (MessageUtils.isCloseBoard(message)) {
-            clientServer.setClientStatus(ClientServer.ConnectionStatus.CLOSED.getStatus());
+            clientServer.setConnectionStatus(ClientServer.ConnectionStatus.CLOSED.getStatus());
             senderCtx.close();
             senderCtx.channel().close();
             logger.info("Board closed");

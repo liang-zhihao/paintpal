@@ -108,9 +108,9 @@ public class WhiteBoardController implements CustomController {
 
         clientServer = new ClientServer();
         if (Objects.equals(Config.USER_ROLE, Role.MANAGER.getRole())) {
-            clientServer.setClientStatus(ClientServer.ConnectionStatus.ACTIVE.getStatus());
+            clientServer.setConnectionStatus(ClientServer.ConnectionStatus.ACTIVE.getStatus());
         } else {
-            clientServer.setClientStatus(ClientServer.ConnectionStatus.CONNECTING.getStatus());
+            clientServer.setConnectionStatus(ClientServer.ConnectionStatus.CONNECTING.getStatus());
         }
 
         clientServer.start();
@@ -132,13 +132,13 @@ public class WhiteBoardController implements CustomController {
                     saveMenuItem.setVisible(true);
                     FrameUtil.getCurrentStage(sendButton).setTitle(String.format("Whiteboard - %s", newValue));
                 });
-            }
-            if (newValue == null || newValue.isEmpty()) {
+            } else {
                 Platform.runLater(() -> {
-                    stage.setTitle("Whiteboard");
+                    FrameUtil.getCurrentStage(sendButton).setTitle("Whiteboard");
                     saveMenuItem.setVisible(false);
                 });
             }
+
         });
         // NOTE use this to decoupling UI and network logic
         clientServer.chatMessageProperty().addListener((observable, oldValue, newValue) -> {
@@ -166,7 +166,7 @@ public class WhiteBoardController implements CustomController {
                 Platform.runLater(() -> {
                     if (DialogUtil.showAndWaitConfirm("Join", String.format("Can %s Join the whiteboard?", userId))) {
                         clientServer.sendMessage(MessageBuilder.buildManagerApprovalMessage(userId, true, "Accepted by manager"));
-                        clientServer.getUserList().add(userId);
+//                        clientServer.getUserList().add(userId);
                     } else {
                         clientServer.sendMessage(MessageBuilder.buildManagerApprovalMessage(userId, false, "Rejected by manager"));
                     }
@@ -175,17 +175,16 @@ public class WhiteBoardController implements CustomController {
             }
         });
 //        setup client connect status
-        clientServer.clientStatusProperty().addListener((observable, oldValue, newValue) -> {
+        clientServer.connectionStatusProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.isEmpty()) {
                 if (ClientServer.ConnectionStatus.APPROVED.equals(newValue)) {
-                    clientServer.setClientStatus(ClientServer.ConnectionStatus.ACTIVE.getStatus());
+                    clientServer.setConnectionStatus(ClientServer.ConnectionStatus.ACTIVE.getStatus());
                     maskerPane.setVisible(false);
                 }
                 if (newValue.equals(ClientServer.ConnectionStatus.WAITING_FOR_APPROVAL.getStatus())) {
                     maskerPane.setVisible(true);
                 }
                 if (newValue.equals(ClientServer.ConnectionStatus.KICKED_OUT.getStatus())) {
-
                     Platform.runLater(() -> {
                         maskerPane.setVisible(true);
                         maskerPane.setText("You have been kicked out");
@@ -206,6 +205,13 @@ public class WhiteBoardController implements CustomController {
                         maskerPane.setText("You are not allowed to join the whiteboard");
                     });
 
+                }
+                if (newValue.equals(ClientServer.ConnectionStatus.DISCONNECTED.getStatus())) {
+                    Platform.runLater(() -> {
+                        logger.info("disconnected");
+                        maskerPane.setVisible(true);
+                        maskerPane.setText("Can not connect to the server");
+                    });
                 }
             }
         });
@@ -238,7 +244,7 @@ public class WhiteBoardController implements CustomController {
         sendButton.setOnAction(event -> {
             String text = chatField.getText();
             if (text != null && !text.isEmpty()) {
-                String msg = MessageBuilder.buildChatMessage(Config.USER_ID, text);
+                String msg = MessageBuilder.buildChatMessage(Config.USER_ID, text.trim());
                 clientServer.sendMessage(msg);
                 chatField.clear();
             }
@@ -254,7 +260,7 @@ public class WhiteBoardController implements CustomController {
                 }
                 clientServer.sendMessage(MessageBuilder.buildNewBoardMessage(Config.USER_ID));
 //            update my board
-                WhiteboardCanvas.getInstance().setFilePath("");
+                WhiteboardCanvas.getInstance().setFilePath(null);
                 WhiteboardCanvas.getInstance().reset();
             });
 
@@ -280,8 +286,13 @@ public class WhiteBoardController implements CustomController {
             }
             FileManager fileManager = new FileManager(FrameUtil.getCurrentStage(sendButton));
             Pair<String, List<String>> commands = fileManager.loadJsonlFile();
+            for (String line : commands.getValue()) {
+                if (!MessageUtils.isTypeOperation(line)) {
+                    DialogUtil.showErrorAlert("The file is empty or invalid.");
+                    return;
+                }
+            }
             if (commands.getValue().isEmpty()) {
-                DialogUtil.showErrorAlert("The file is empty or invalid.");
                 return;
             }
             WhiteboardCanvas.getInstance().reset();
@@ -524,7 +535,6 @@ public class WhiteBoardController implements CustomController {
         }
     }
 
-//TODO bug report: when you draw a line, then draw a rectangle,  first rectangle will disappear in other clients.
 
 
     public String toRGBCode(Color color) {
@@ -535,7 +545,7 @@ public class WhiteBoardController implements CustomController {
         if (!Role.MANAGER.equals(Config.USER_ROLE)) {
             return;
         }
-        clientServer.sendMessage(MessageBuilder.buildSaveBoardMessage(Config.USER_ID)).await();
+//        clientServer.sendMessage(MessageBuilder.buildSaveBoardMessage(Config.USER_ID)).await();
 
         if (clientServer.getSavedCommands().isEmpty()) {
             DialogUtil.showSimpleAlert("There is nothing to save.");

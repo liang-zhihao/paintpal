@@ -22,15 +22,7 @@ public class ServerFileOperationHandler extends io.netty.channel.ChannelInboundH
 
 
 
-//    TODO build jar file and arg to run
 
-//    TODO When the manager quits, the application will be terminated. All the peers will get a message notifying them.
-
-//    TODO error handling ask gpt to generate full test plan
-
-//    TODO report
-
-//    TODO 'Close' is closing the current whiteboard, but it should show the alert to ask the manager if they want to save the changes or not.
 
 
     // We use a ConcurrentMap to hold the connected channels to make sure it's thread-safe
@@ -61,6 +53,7 @@ public class ServerFileOperationHandler extends io.netty.channel.ChannelInboundH
     public void channelRead(ChannelHandlerContext senderCtx, Object msg) {
         String message = ((ByteBuf) msg).toString(Charset.defaultCharset());
         if (MessageUtils.isNewBoard(message)) {
+            whiteboardServer.getHistoryDrawCommands().clear();
             whiteboardServer.broadcastMessage(message, senderCtx);
             logger.info("New board created");
         }

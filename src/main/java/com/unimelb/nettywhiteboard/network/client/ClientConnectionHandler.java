@@ -40,14 +40,14 @@ public class ClientConnectionHandler extends io.netty.channel.ChannelInboundHand
 
     @Override
     public void channelRead(ChannelHandlerContext senderCtx, Object msg) {
-//TODO receive approve result from server
+
         String message = ((ByteBuf) msg).toString(Charset.defaultCharset());
 // when member receive kick out message
-        System.out.println(message);
+//        System.out.println(message);
 
         if (MessageUtils.isKickUserOut(message)) {
             logger.info("You are kicked out by manager");
-            clientServer.setClientStatus(ConnectionStatus.KICKED_OUT.getStatus());
+            clientServer.setConnectionStatus(ConnectionStatus.KICKED_OUT.getStatus());
             senderCtx.close();
         }
 // when member receive approve message
@@ -55,18 +55,16 @@ public class ClientConnectionHandler extends io.netty.channel.ChannelInboundHand
             JsonObject jsonObject = MessageUtils.parseJson(message);
             String reason = jsonObject.get("reason").getAsString();
             if (jsonObject.has("approved") && jsonObject.get("approved").getAsBoolean() && jsonObject.get("userId").getAsString().equals(Config.USER_ID)) {
-                clientServer.setClientStatus(ConnectionStatus.APPROVED.getStatus());
+                clientServer.setConnectionStatus(ConnectionStatus.APPROVED.getStatus());
                 logger.info("You are approved by one of managers");
 
             } else {
-                clientServer.setClientStatus(ConnectionStatus.NOT_APPROVED.getStatus());
+                clientServer.setConnectionStatus(ConnectionStatus.NOT_APPROVED.getStatus());
                 Platform.runLater(() -> {
                     DialogUtil.showSimpleAlert(reason);
                 });
                 senderCtx.close();
-
             }
-
         }
 //        when manger receive join message
         if (Role.MANAGER.equals(Config.USER_ROLE) && MessageUtils.isJoin(message)) {
@@ -79,8 +77,8 @@ public class ClientConnectionHandler extends io.netty.channel.ChannelInboundHand
 
             }
         }
-        if (clientServer.getClientStatus().equals(ConnectionStatus.APPROVED.getStatus())
-                || clientServer.getClientStatus().equals(ConnectionStatus.ACTIVE.getStatus())) {
+        if (clientServer.getConnectionStatus().equals(ConnectionStatus.APPROVED.getStatus())
+                || clientServer.getConnectionStatus().equals(ConnectionStatus.ACTIVE.getStatus())) {
             senderCtx.fireChannelRead(msg);
         }
 
